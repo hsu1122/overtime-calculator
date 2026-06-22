@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>加班薪資計算機</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
+    background: #f4f6f8;
+    margin: 0;
+    padding: 24px;
+    color: #222;
+  }
+  .card {
+    max-width: 560px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 12px;
+    padding: 28px 32px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  }
+  h1 {
+    font-size: 22px;
+    margin-bottom: 4px;
+  }
+  p.sub {
+    color: #666;
+    font-size: 13px;
+    margin-top: 0;
+    margin-bottom: 24px;
+  }
+  label {
+    display: block;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 6px;
+  }
+  .field {
+    margin-bottom: 18px;
+  }
+  input[type="number"] {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+  }
+  input[type="number"]:focus {
+    outline: none;
+    border-color: #3b82f6;
+  }
+  .ot-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .ot-row .rate-label {
+    flex: 0 0 90px;
+    font-weight: bold;
+    font-size: 14px;
+    color: #3b82f6;
+  }
+  .ot-row input[type="number"] {
+    flex: 1;
+  }
+  .ot-row button.remove {
+    flex: 0 0 auto;
+    background: none;
+    border: none;
+    color: #ef4444;
+    font-size: 18px;
+    cursor: pointer;
+    line-height: 1;
+  }
+  #addRateBtn {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 20px;
+    border: 1px dashed #aaa;
+    border-radius: 8px;
+    background: #fff;
+    color: #555;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  #addRateBtn:hover {
+    background: #f0f0f0;
+  }
+  .calc-btn {
+    width: 100%;
+    padding: 12px;
+    background: #3b82f6;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .calc-btn:hover {
+    background: #2563eb;
+  }
+  .result {
+    margin-top: 24px;
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+  }
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    padding: 4px 0;
+  }
+  .result-row.total {
+    font-size: 18px;
+    font-weight: bold;
+    color: #1d4ed8;
+    border-top: 1px solid #eee;
+    margin-top: 8px;
+    padding-top: 10px;
+  }
+  .hint {
+    font-size: 12px;
+    color: #999;
+    margin-top: 16px;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>加班薪資計算機</h1>
+  <p class="sub">輸入月薪與各倍率的加班時數，計算加班費與總薪資</p>
+
+  <div class="field">
+    <label for="monthlySalary">月薪（元）</label>
+    <input type="number" id="monthlySalary" placeholder="例如：36000" min="0">
+    <div id="hourlyBaseHint" style="font-size:12px; color:#888; margin-top:6px;"></div>
+  </div>
+
+  <div class="field">
+    <label>加班時數（依倍率分類）</label>
+    <div id="otRows"></div>
+    <button id="addRateBtn" type="button">+ 新增倍率欄位</button>
+  </div>
+
+  <button class="calc-btn" type="button" id="calcBtn">計算薪資</button>
+
+  <div class="result" id="resultBox" style="display:none;">
+    <div class="result-row">
+      <span>本薪</span>
+      <span id="rBase">0</span>
+    </div>
+    <div id="rOtRows"></div>
+    <div class="result-row">
+      <span>加班費合計</span>
+      <span id="rOtTotal">0</span>
+    </div>
+    <div class="result-row total">
+      <span>總薪資</span>
+      <span id="rTotal">0</span>
+    </div>
+  </div>
+
+  <div class="hint">
+    說明：本薪以月薪 ÷ 30 ÷ 8 計算出時薪基準，再依各倍率乘上對應加班時數。<br>
+    台灣常見加班倍率：平日前2小時 1.33、平日第3小時起 1.66、休息日加班依時數分 1.33 / 1.66 / 2.67 等。可依需要自行新增或修改倍率欄位。
+  </div>
+</div>
+
+<script>
+  const otRowsEl = document.getElementById('otRows');
+  const defaultRates = [1.33, 1.66];
+
+  function addRateRow(rate) {
+    const row = document.createElement('div');
+    row.className = 'ot-row';
+    row.innerHTML = `
+      <span class="rate-label rate-display">${rate.toFixed(2)} 倍</span>
+      <input type="number" class="ot-rate" value="${rate}" step="0.01" min="0" style="display:none;">
+      <input type="number" class="ot-hours" placeholder="時數" min="0" step="0.5">
+      <button type="button" class="remove">&times;</button>
+    `;
+    const rateInput = row.querySelector('.ot-rate');
+    const rateDisplay = row.querySelector('.rate-display');
+    rateDisplay.style.cursor = 'pointer';
+    rateDisplay.title = '點擊修改倍率';
+    rateDisplay.addEventListener('click', () => {
+      rateInput.style.display = 'block';
+      rateDisplay.style.display = 'none';
+      rateInput.focus();
+    });
+    rateInput.addEventListener('blur', () => {
+      const v = parseFloat(rateInput.value) || 0;
+      rateDisplay.textContent = v.toFixed(2) + ' 倍';
+      rateInput.style.display = 'none';
+      rateDisplay.style.display = 'block';
+    });
+    const hoursInput = row.querySelector('.ot-hours');
+    hoursInput.addEventListener('input', () => {
+      updatePreview(row);
+      calculate();
+    });
+    rateInput.addEventListener('input', () => {
+      updatePreview(row);
+      calculate();
+    });
+
+    const preview = document.createElement('div');
+    preview.className = 'ot-preview';
+    preview.style.cssText = 'flex:0 0 auto; font-size:13px; color:#16a34a; min-width:180px; text-align:right; white-space:nowrap;';
+    row.appendChild(preview);
+
+    row.querySelector('.remove').addEventListener('click', () => { row.remove(); calculate(); });
+    otRowsEl.appendChild(row);
+  }
+
+  function getHourlyBase() {
+    const monthlySalary = parseFloat(document.getElementById('monthlySalary').value) || 0;
+    return monthlySalary / 30 / 8;
+  }
+
+  function updatePreview(row) {
+    const previewEl = row.querySelector('.ot-preview');
+    const monthlySalary = parseFloat(document.getElementById('monthlySalary').value) || 0;
+    const rate = parseFloat(row.querySelector('.ot-rate').value) || 0;
+    const hours = parseFloat(row.querySelector('.ot-hours').value) || 0;
+
+    if (monthlySalary <= 0 || hours <= 0) {
+      previewEl.textContent = '';
+      return;
+    }
+    const hourlyBase = getHourlyBase();
+    const pay = hourlyBase * rate * hours;
+    previewEl.textContent = `${rate.toFixed(2)} × ${hours} × ${hourlyBase.toFixed(1)} ≈ ${Math.round(pay).toLocaleString()} 元`;
+  }
+
+  function updateHourlyBaseHint() {
+    const monthlySalary = parseFloat(document.getElementById('monthlySalary').value) || 0;
+    const hint = document.getElementById('hourlyBaseHint');
+    if (monthlySalary <= 0) {
+      hint.textContent = '';
+      return;
+    }
+    hint.textContent = `平均時薪 ≈ ${getHourlyBase().toFixed(1)} 元/時（月薪 ÷ 30 ÷ 8）`;
+  }
+
+  defaultRates.forEach(addRateRow);
+
+  document.getElementById('addRateBtn').addEventListener('click', () => addRateRow(2.0));
+
+  document.getElementById('monthlySalary').addEventListener('input', () => {
+    updateHourlyBaseHint();
+    Array.from(otRowsEl.querySelectorAll('.ot-row')).forEach(updatePreview);
+    calculate();
+  });
+
+  function calculate() {
+    const monthlySalary = parseFloat(document.getElementById('monthlySalary').value) || 0;
+    const hourlyBase = monthlySalary / 30 / 8;
+
+    const rows = Array.from(otRowsEl.querySelectorAll('.ot-row'));
+    const rOtRowsEl = document.getElementById('rOtRows');
+    rOtRowsEl.innerHTML = '';
+
+    let otTotal = 0;
+    let hasAnyHours = false;
+    rows.forEach(row => {
+      const rate = parseFloat(row.querySelector('.ot-rate').value) || 0;
+      const hours = parseFloat(row.querySelector('.ot-hours').value) || 0;
+      const pay = hourlyBase * rate * hours;
+      otTotal += pay;
+      if (hours > 0) hasAnyHours = true;
+
+      if (hours > 0) {
+        const div = document.createElement('div');
+        div.className = 'result-row';
+        div.innerHTML = `<span>${rate.toFixed(2)} 倍 × ${hours} 小時</span><span>${Math.round(pay).toLocaleString()}</span>`;
+        rOtRowsEl.appendChild(div);
+      }
+    });
+
+    document.getElementById('rBase').textContent = Math.round(monthlySalary).toLocaleString();
+    document.getElementById('rOtTotal').textContent = Math.round(otTotal).toLocaleString();
+    document.getElementById('rTotal').textContent = Math.round(monthlySalary + otTotal).toLocaleString();
+
+    if (monthlySalary > 0 && hasAnyHours) {
+      document.getElementById('resultBox').style.display = 'block';
+    }
+  }
+
+  document.getElementById('calcBtn').addEventListener('click', calculate);
+</script>
+
+</body>
+</html>
