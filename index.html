@@ -196,6 +196,20 @@
     <button id="addBonusBtn" type="button">+ 新增獎金欄位</button>
   </div>
 
+  <div class="field" style="margin-bottom:8px;">
+    <label>員工自提設定</label>
+    <div style="display:flex; align-items:center; gap:12px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; padding:10px 12px;">
+      <label style="display:flex; align-items:center; gap:6px; font-weight:normal; margin:0; cursor:pointer;">
+        <input type="checkbox" id="selfContribToggle" checked style="width:16px; height:16px; cursor:pointer;">
+        啟用自提
+      </label>
+      <div style="display:flex; align-items:center; gap:6px; flex:1;">
+        <input type="number" id="selfContribRate" value="6" min="0" max="6" step="1" style="width:70px; padding:6px 10px; font-size:15px;">
+        <span style="font-size:14px; color:#555;">%（最高 6%）</span>
+      </div>
+    </div>
+  </div>
+
   <button class="calc-btn" type="button" id="calcBtn">計算薪資</button>
 
   <div class="result" id="resultBox" style="display:none;">
@@ -235,8 +249,8 @@
       <span>福利金（0.5%）</span>
       <span id="rWelfare">0</span>
     </div>
-    <div class="result-row deduct">
-      <span>員工自提（6%）</span>
+    <div class="result-row deduct" id="rSelfContribRow">
+      <span id="rSelfContribLabel">員工自提（6%）</span>
       <span id="rSelfContrib">0</span>
     </div>
     <div class="result-row subtotal deduct">
@@ -416,7 +430,9 @@
     const laborIns    = Math.round(bracket * 0.025);     // 勞保+就保 2.5%
     const healthIns   = Math.round(bracket * 0.01551);   // 健保 1.551%
     const welfare     = Math.round(monthlySalary * 0.005); // 福利金 0.5%
-    const selfContrib = Math.round(bracket * 0.06);      // 員工自提 6%
+    const selfContribOn   = document.getElementById('selfContribToggle').checked;
+    const selfContribRate = (parseFloat(document.getElementById('selfContribRate').value) || 0) / 100;
+    const selfContrib = selfContribOn ? Math.round(bracket * selfContribRate) : 0;
     const deductTotal = laborIns + healthIns + welfare + selfContrib;
     const net = gross - deductTotal;
 
@@ -427,7 +443,14 @@
     document.getElementById('rLaborIns').textContent = `- ${fmt(laborIns)}`;
     document.getElementById('rHealthIns').textContent = `- ${fmt(healthIns)}`;
     document.getElementById('rWelfare').textContent = `- ${fmt(welfare)}`;
-    document.getElementById('rSelfContrib').textContent = `- ${fmt(selfContrib)}`;
+    const selfContribRow = document.getElementById('rSelfContribRow');
+    if (selfContribOn && selfContrib > 0) {
+      selfContribRow.style.display = 'flex';
+      document.getElementById('rSelfContribLabel').textContent = `員工自提（${Math.round(selfContribRate * 100)}%）`;
+      document.getElementById('rSelfContrib').textContent = `- ${fmt(selfContrib)}`;
+    } else {
+      selfContribRow.style.display = 'none';
+    }
     document.getElementById('rDeductTotal').textContent = `- ${fmt(deductTotal)}`;
     document.getElementById('rNet').textContent = fmt(net);
 
@@ -436,6 +459,8 @@
     }
   }
 
+  document.getElementById('selfContribToggle').addEventListener('change', calculate);
+  document.getElementById('selfContribRate').addEventListener('input', calculate);
   document.getElementById('calcBtn').addEventListener('click', calculate);
 </script>
 
