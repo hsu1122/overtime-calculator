@@ -21,25 +21,10 @@
     padding: 28px 32px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.08);
   }
-  h1 {
-    font-size: 22px;
-    margin-bottom: 4px;
-  }
-  p.sub {
-    color: #666;
-    font-size: 13px;
-    margin-top: 0;
-    margin-bottom: 24px;
-  }
-  label {
-    display: block;
-    font-size: 14px;
-    font-weight: bold;
-    margin-bottom: 6px;
-  }
-  .field {
-    margin-bottom: 18px;
-  }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  p.sub { color: #666; font-size: 13px; margin-top: 0; margin-bottom: 24px; }
+  label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 6px; }
+  .field { margin-bottom: 18px; }
   input[type="number"] {
     width: 100%;
     padding: 10px 12px;
@@ -47,10 +32,7 @@
     border: 1px solid #ccc;
     border-radius: 8px;
   }
-  input[type="number"]:focus {
-    outline: none;
-    border-color: #3b82f6;
-  }
+  input[type="number"]:focus { outline: none; border-color: #3b82f6; }
   .ot-row {
     display: flex;
     flex-wrap: wrap;
@@ -68,10 +50,7 @@
     font-size: 14px;
     color: #3b82f6;
   }
-  .ot-row input[type="number"] {
-    flex: 1 1 80px;
-    min-width: 70px;
-  }
+  .ot-row input[type="number"] { flex: 1 1 80px; min-width: 70px; }
   .ot-row button.remove {
     flex: 0 0 auto;
     background: none;
@@ -81,10 +60,7 @@
     cursor: pointer;
     line-height: 1;
   }
-  .ot-row .ot-preview {
-    flex: 1 0 100%;
-    order: 99;
-  }
+  .ot-row .ot-preview { flex: 1 0 100%; order: 99; }
   #addRateBtn {
     width: 100%;
     padding: 8px;
@@ -96,9 +72,7 @@
     cursor: pointer;
     font-size: 13px;
   }
-  #addRateBtn:hover {
-    background: #f0f0f0;
-  }
+  #addRateBtn:hover { background: #f0f0f0; }
   .calc-btn {
     width: 100%;
     padding: 12px;
@@ -110,25 +84,34 @@
     font-weight: bold;
     cursor: pointer;
   }
-  .calc-btn:hover {
-    background: #2563eb;
-  }
-  .result {
-    margin-top: 24px;
-    border-top: 1px solid #eee;
-    padding-top: 20px;
-  }
+  .calc-btn:hover { background: #2563eb; }
+  .result { margin-top: 24px; border-top: 1px solid #eee; padding-top: 20px; }
   .result-row {
     display: flex;
     justify-content: space-between;
     font-size: 14px;
     padding: 4px 0;
   }
+  .result-row.section-title {
+    font-size: 12px;
+    font-weight: bold;
+    color: #888;
+    margin-top: 12px;
+    padding-bottom: 2px;
+    border-bottom: 1px dashed #eee;
+  }
+  .result-row.deduct { color: #ef4444; }
+  .result-row.subtotal {
+    font-weight: bold;
+    border-top: 1px solid #eee;
+    margin-top: 4px;
+    padding-top: 6px;
+  }
   .result-row.total {
     font-size: 18px;
     font-weight: bold;
     color: #1d4ed8;
-    border-top: 1px solid #eee;
+    border-top: 2px solid #e5e7eb;
     margin-top: 8px;
     padding-top: 10px;
   }
@@ -144,7 +127,7 @@
 
 <div class="card">
   <h1>加班薪資計算機</h1>
-  <p class="sub">輸入月薪與各倍率的加班時數，計算加班費與總薪資</p>
+  <p class="sub">輸入月薪與各倍率的加班時數，計算加班費與實領薪資</p>
 
   <div class="field">
     <label for="monthlySalary">月薪（元）</label>
@@ -161,28 +144,71 @@
   <button class="calc-btn" type="button" id="calcBtn">計算薪資</button>
 
   <div class="result" id="resultBox" style="display:none;">
+
+    <!-- 收入 -->
+    <div class="result-row section-title"><span>收入</span></div>
     <div class="result-row">
       <span>本薪</span>
       <span id="rBase">0</span>
     </div>
     <div id="rOtRows"></div>
-    <div class="result-row">
+    <div class="result-row subtotal">
       <span>加班費合計</span>
       <span id="rOtTotal">0</span>
     </div>
+    <div class="result-row subtotal">
+      <span>應發薪資合計</span>
+      <span id="rGross">0</span>
+    </div>
+
+    <!-- 扣項 -->
+    <div class="result-row section-title"><span>勞健保扣項（員工自付）</span><span id="rInsuranceBracket" style="font-weight:normal; color:#aaa;"></span></div>
+    <div class="result-row deduct">
+      <span>勞保（2.1%）</span>
+      <span id="rLaborIns">0</span>
+    </div>
+    <div class="result-row deduct">
+      <span>就業保險（0.2%）</span>
+      <span id="rEmpIns">0</span>
+    </div>
+    <div class="result-row deduct">
+      <span>健保（1.551%）</span>
+      <span id="rHealthIns">0</span>
+    </div>
+    <div class="result-row subtotal deduct">
+      <span>扣項合計</span>
+      <span id="rDeductTotal">0</span>
+    </div>
+
+    <!-- 實領 -->
     <div class="result-row total">
-      <span>總薪資</span>
-      <span id="rTotal">0</span>
+      <span>實領薪資</span>
+      <span id="rNet">0</span>
     </div>
   </div>
 
   <div class="hint">
     說明：本薪以月薪 ÷ 30 ÷ 8 計算出時薪基準，再依各倍率乘上對應加班時數。<br>
-    台灣常見加班倍率：平日前2小時 1.33、平日第3小時起 1.66、休息日加班依時數分 1.33 / 1.66 / 2.67 等。可依需要自行新增或修改倍率欄位。
+    勞健保依 2025 年投保薪資級距對應後計算員工自付部分（勞保 2.1%、就保 0.2%、健保 1.551%）。<br>
+    台灣常見加班倍率：平日前 2 小時 1.33、第 3 小時起 1.66、休息日 1.33 / 1.66 / 2.67 等。
   </div>
 </div>
 
 <script>
+  // 2025 勞保/健保投保薪資級距（月薪對應投保金額）
+  const INSURANCE_BRACKETS = [
+    27470, 28800, 30300, 31800, 33300,
+    34800, 36300, 38200, 40100, 42000,
+    43900, 45800
+  ];
+
+  function getInsuranceBracket(salary) {
+    for (const b of INSURANCE_BRACKETS) {
+      if (salary <= b) return b;
+    }
+    return INSURANCE_BRACKETS[INSURANCE_BRACKETS.length - 1];
+  }
+
   const otRowsEl = document.getElementById('otRows');
   const defaultRates = [1.33, 1.66];
 
@@ -211,14 +237,8 @@
       rateDisplay.style.display = 'block';
     });
     const hoursInput = row.querySelector('.ot-hours');
-    hoursInput.addEventListener('input', () => {
-      updatePreview(row);
-      calculate();
-    });
-    rateInput.addEventListener('input', () => {
-      updatePreview(row);
-      calculate();
-    });
+    hoursInput.addEventListener('input', () => { updatePreview(row); calculate(); });
+    rateInput.addEventListener('input', () => { updatePreview(row); calculate(); });
 
     const preview = document.createElement('div');
     preview.className = 'ot-preview';
@@ -239,11 +259,7 @@
     const monthlySalary = parseFloat(document.getElementById('monthlySalary').value) || 0;
     const rate = parseFloat(row.querySelector('.ot-rate').value) || 0;
     const hours = parseFloat(row.querySelector('.ot-hours').value) || 0;
-
-    if (monthlySalary <= 0 || hours <= 0) {
-      previewEl.textContent = '';
-      return;
-    }
+    if (monthlySalary <= 0 || hours <= 0) { previewEl.textContent = ''; return; }
     const hourlyBase = getHourlyBase();
     const pay = hourlyBase * rate * hours;
     previewEl.textContent = `${rate.toFixed(2)} × ${hours} × ${hourlyBase.toFixed(1)} ≈ ${Math.round(pay).toLocaleString()} 元`;
@@ -252,22 +268,19 @@
   function updateHourlyBaseHint() {
     const monthlySalary = parseFloat(document.getElementById('monthlySalary').value) || 0;
     const hint = document.getElementById('hourlyBaseHint');
-    if (monthlySalary <= 0) {
-      hint.textContent = '';
-      return;
-    }
+    if (monthlySalary <= 0) { hint.textContent = ''; return; }
     hint.textContent = `平均時薪 ≈ ${getHourlyBase().toFixed(1)} 元/時（月薪 ÷ 30 ÷ 8）`;
   }
 
   defaultRates.forEach(addRateRow);
-
   document.getElementById('addRateBtn').addEventListener('click', () => addRateRow(2.0));
-
   document.getElementById('monthlySalary').addEventListener('input', () => {
     updateHourlyBaseHint();
     Array.from(otRowsEl.querySelectorAll('.ot-row')).forEach(updatePreview);
     calculate();
   });
+
+  function fmt(n) { return Math.round(n).toLocaleString(); }
 
   function calculate() {
     const monthlySalary = parseFloat(document.getElementById('monthlySalary').value) || 0;
@@ -285,18 +298,33 @@
       const pay = hourlyBase * rate * hours;
       otTotal += pay;
       if (hours > 0) hasAnyHours = true;
-
       if (hours > 0) {
         const div = document.createElement('div');
         div.className = 'result-row';
-        div.innerHTML = `<span>${rate.toFixed(2)} 倍 × ${hours} 小時</span><span>${Math.round(pay).toLocaleString()}</span>`;
+        div.innerHTML = `<span>${rate.toFixed(2)} 倍 × ${hours} 小時</span><span>${fmt(pay)}</span>`;
         rOtRowsEl.appendChild(div);
       }
     });
 
-    document.getElementById('rBase').textContent = Math.round(monthlySalary).toLocaleString();
-    document.getElementById('rOtTotal').textContent = Math.round(otTotal).toLocaleString();
-    document.getElementById('rTotal').textContent = Math.round(monthlySalary + otTotal).toLocaleString();
+    const gross = monthlySalary + otTotal;
+
+    // 勞健保以月薪對應投保薪資級距計算（加班費不計入投保薪資）
+    const bracket = getInsuranceBracket(monthlySalary);
+    const laborIns  = Math.round(bracket * 0.021);
+    const empIns    = Math.round(bracket * 0.002);
+    const healthIns = Math.round(bracket * 0.01551);
+    const deductTotal = laborIns + empIns + healthIns;
+    const net = gross - deductTotal;
+
+    document.getElementById('rBase').textContent = fmt(monthlySalary);
+    document.getElementById('rOtTotal').textContent = fmt(otTotal);
+    document.getElementById('rGross').textContent = fmt(gross);
+    document.getElementById('rInsuranceBracket').textContent = `投保級距 ${bracket.toLocaleString()} 元`;
+    document.getElementById('rLaborIns').textContent = `- ${fmt(laborIns)}`;
+    document.getElementById('rEmpIns').textContent = `- ${fmt(empIns)}`;
+    document.getElementById('rHealthIns').textContent = `- ${fmt(healthIns)}`;
+    document.getElementById('rDeductTotal').textContent = `- ${fmt(deductTotal)}`;
+    document.getElementById('rNet').textContent = fmt(net);
 
     if (monthlySalary > 0 && hasAnyHours) {
       document.getElementById('resultBox').style.display = 'block';
