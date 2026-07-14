@@ -61,6 +61,44 @@
     line-height: 1;
   }
   .ot-row .ot-preview { flex: 1 0 100%; order: 99; }
+  .bonus-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .bonus-row .bonus-name {
+    flex: 1 1 120px;
+    padding: 10px 12px;
+    font-size: 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+  }
+  .bonus-row .bonus-amount {
+    flex: 1 1 100px;
+    min-width: 80px;
+  }
+  .bonus-row button.remove {
+    flex: 0 0 auto;
+    background: none;
+    border: none;
+    color: #ef4444;
+    font-size: 18px;
+    cursor: pointer;
+    line-height: 1;
+  }
+  #addBonusBtn {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 4px;
+    border: 1px dashed #aaa;
+    border-radius: 8px;
+    background: #fff;
+    color: #555;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  #addBonusBtn:hover { background: #f0f0f0; }
   #addRateBtn {
     width: 100%;
     padding: 8px;
@@ -141,6 +179,23 @@
     <button id="addRateBtn" type="button">+ 新增倍率欄位</button>
   </div>
 
+  <div class="field">
+    <label>額外獎金</label>
+    <div id="bonusRows">
+      <div class="bonus-row">
+        <input type="text" class="bonus-name" placeholder="名稱，例如：工廠績效" value="工廠績效">
+        <input type="number" class="bonus-amount" placeholder="金額" min="0">
+        <button type="button" class="remove">&times;</button>
+      </div>
+      <div class="bonus-row">
+        <input type="text" class="bonus-name" placeholder="名稱，例如：其他獎金" value="其他獎金">
+        <input type="number" class="bonus-amount" placeholder="金額" min="0">
+        <button type="button" class="remove">&times;</button>
+      </div>
+    </div>
+    <button id="addBonusBtn" type="button">+ 新增獎金欄位</button>
+  </div>
+
   <button class="calc-btn" type="button" id="calcBtn">計算薪資</button>
 
   <div class="result" id="resultBox" style="display:none;">
@@ -155,6 +210,11 @@
     <div class="result-row subtotal">
       <span>加班費合計</span>
       <span id="rOtTotal">0</span>
+    </div>
+    <div id="rBonusRows"></div>
+    <div class="result-row subtotal">
+      <span>獎金合計</span>
+      <span id="rBonusTotal">0</span>
     </div>
     <div class="result-row subtotal">
       <span>應發薪資合計</span>
@@ -272,6 +332,28 @@
     hint.textContent = `平均時薪 ≈ ${getHourlyBase().toFixed(1)} 元/時（月薪 ÷ 30 ÷ 8）`;
   }
 
+  function addBonusRow(name = '', amount = '') {
+    const bonusRowsEl = document.getElementById('bonusRows');
+    const row = document.createElement('div');
+    row.className = 'bonus-row';
+    row.innerHTML = `
+      <input type="text" class="bonus-name" placeholder="名稱，例如：其他獎金" value="${name}">
+      <input type="number" class="bonus-amount" placeholder="金額" min="0" value="${amount}">
+      <button type="button" class="remove">&times;</button>
+    `;
+    row.querySelector('.remove').addEventListener('click', () => { row.remove(); calculate(); });
+    row.querySelector('.bonus-amount').addEventListener('input', calculate);
+    bonusRowsEl.appendChild(row);
+  }
+
+  // 初始化預設兩列獎金的 remove/input 事件
+  document.querySelectorAll('#bonusRows .bonus-row').forEach(row => {
+    row.querySelector('.remove').addEventListener('click', () => { row.remove(); calculate(); });
+    row.querySelector('.bonus-amount').addEventListener('input', calculate);
+  });
+
+  document.getElementById('addBonusBtn').addEventListener('click', () => addBonusRow());
+
   defaultRates.forEach(addRateRow);
   document.getElementById('addRateBtn').addEventListener('click', () => addRateRow(2.0));
   document.getElementById('monthlySalary').addEventListener('input', () => {
@@ -306,7 +388,24 @@
       }
     });
 
-    const gross = monthlySalary + otTotal;
+    // 獎金
+    const rBonusRowsEl = document.getElementById('rBonusRows');
+    rBonusRowsEl.innerHTML = '';
+    let bonusTotal = 0;
+    document.querySelectorAll('#bonusRows .bonus-row').forEach(row => {
+      const name = row.querySelector('.bonus-name').value.trim() || '獎金';
+      const amount = parseFloat(row.querySelector('.bonus-amount').value) || 0;
+      if (amount > 0) {
+        bonusTotal += amount;
+        const div = document.createElement('div');
+        div.className = 'result-row';
+        div.innerHTML = `<span>${name}</span><span>${fmt(amount)}</span>`;
+        rBonusRowsEl.appendChild(div);
+      }
+    });
+    document.getElementById('rBonusTotal').textContent = fmt(bonusTotal);
+
+    const gross = monthlySalary + otTotal + bonusTotal;
 
     // 勞健保以月薪對應投保薪資級距計算（加班費不計入投保薪資）
     const bracket = getInsuranceBracket(monthlySalary);
