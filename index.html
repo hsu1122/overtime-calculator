@@ -222,18 +222,22 @@
     </div>
 
     <!-- 扣項 -->
-    <div class="result-row section-title"><span>勞健保扣項（員工自付）</span><span id="rInsuranceBracket" style="font-weight:normal; color:#aaa;"></span></div>
+    <div class="result-row section-title"><span>扣項</span><span id="rInsuranceBracket" style="font-weight:normal; color:#aaa;"></span></div>
     <div class="result-row deduct">
-      <span>勞保（2.1%）</span>
+      <span>勞保費（員工自費，2.5%）</span>
       <span id="rLaborIns">0</span>
     </div>
     <div class="result-row deduct">
-      <span>就業保險（0.2%）</span>
-      <span id="rEmpIns">0</span>
+      <span>健保費（員工自費，1.551%）</span>
+      <span id="rHealthIns">0</span>
     </div>
     <div class="result-row deduct">
-      <span>健保（1.551%）</span>
-      <span id="rHealthIns">0</span>
+      <span>福利金（0.5%）</span>
+      <span id="rWelfare">0</span>
+    </div>
+    <div class="result-row deduct">
+      <span>員工自提（6%）</span>
+      <span id="rSelfContrib">0</span>
     </div>
     <div class="result-row subtotal deduct">
       <span>扣項合計</span>
@@ -409,10 +413,11 @@
 
     // 勞健保以月薪對應投保薪資級距計算（加班費不計入投保薪資）
     const bracket = getInsuranceBracket(monthlySalary);
-    const laborIns  = Math.round(bracket * 0.021);
-    const empIns    = Math.round(bracket * 0.002);
-    const healthIns = Math.round(bracket * 0.01551);
-    const deductTotal = laborIns + empIns + healthIns;
+    const laborIns    = Math.round(bracket * 0.025);     // 勞保+就保 2.5%
+    const healthIns   = Math.round(bracket * 0.01551);   // 健保 1.551%
+    const welfare     = Math.round(monthlySalary * 0.005); // 福利金 0.5%
+    const selfContrib = Math.round(bracket * 0.06);      // 員工自提 6%
+    const deductTotal = laborIns + healthIns + welfare + selfContrib;
     const net = gross - deductTotal;
 
     document.getElementById('rBase').textContent = fmt(monthlySalary);
@@ -420,8 +425,9 @@
     document.getElementById('rGross').textContent = fmt(gross);
     document.getElementById('rInsuranceBracket').textContent = `投保級距 ${bracket.toLocaleString()} 元`;
     document.getElementById('rLaborIns').textContent = `- ${fmt(laborIns)}`;
-    document.getElementById('rEmpIns').textContent = `- ${fmt(empIns)}`;
     document.getElementById('rHealthIns').textContent = `- ${fmt(healthIns)}`;
+    document.getElementById('rWelfare').textContent = `- ${fmt(welfare)}`;
+    document.getElementById('rSelfContrib').textContent = `- ${fmt(selfContrib)}`;
     document.getElementById('rDeductTotal').textContent = `- ${fmt(deductTotal)}`;
     document.getElementById('rNet').textContent = fmt(net);
 
