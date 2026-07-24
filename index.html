@@ -196,6 +196,15 @@
     <button id="addBonusBtn" type="button">+ 新增獎金欄位</button>
   </div>
 
+  <div class="field">
+    <label for="dependents">健保眷屬加保人數</label>
+    <div style="display:flex; align-items:center; gap:12px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; padding:10px 12px;">
+      <input type="number" id="dependents" value="0" min="0" max="9" step="1" style="width:70px; padding:6px 10px; font-size:15px;">
+      <span style="font-size:13px; color:#555;">人（超過 3 口費用上限以 3 口計算）</span>
+    </div>
+    <div id="dependentsHint" style="font-size:12px; color:#888; margin-top:6px;"></div>
+  </div>
+
   <div class="field" style="margin-bottom:8px;">
     <label>員工自提設定</label>
     <div style="display:flex; align-items:center; gap:12px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; padding:10px 12px;">
@@ -242,7 +251,7 @@
       <span id="rLaborIns">0</span>
     </div>
     <div class="result-row deduct">
-      <span>健保費（員工自費，1.551%）</span>
+      <span id="rHealthInsLabel">健保費（本人）</span>
       <span id="rHealthIns">0</span>
     </div>
     <div class="result-row deduct">
@@ -427,8 +436,9 @@
 
     // 勞健保以月薪對應投保薪資級距計算（加班費不計入投保薪資）
     const bracket = getInsuranceBracket(monthlySalary);
-    const laborIns    = Math.round(bracket * 0.025);     // 勞保+就保 2.5%
-    const healthIns   = Math.round(bracket * 0.01551);   // 健保 1.551%
+    const dependents    = Math.min(parseInt(document.getElementById('dependents').value) || 0, 3);
+    const laborIns      = Math.round(bracket * 0.025);
+    const healthIns     = Math.round(bracket * 0.01551 * (1 + dependents));
     const welfare     = Math.round(monthlySalary * 0.005); // 福利金 0.5%
     const selfContribOn   = document.getElementById('selfContribToggle').checked;
     const selfContribRate = (parseFloat(document.getElementById('selfContribRate').value) || 0) / 100;
@@ -441,7 +451,21 @@
     document.getElementById('rGross').textContent = fmt(gross);
     document.getElementById('rInsuranceBracket').textContent = `投保級距 ${bracket.toLocaleString()} 元`;
     document.getElementById('rLaborIns').textContent = `- ${fmt(laborIns)}`;
+    const depLabel = dependents > 0 ? `健保費（本人+眷屬${dependents}口）` : `健保費（本人）`;
+    document.getElementById('rHealthInsLabel').textContent = depLabel;
     document.getElementById('rHealthIns').textContent = `- ${fmt(healthIns)}`;
+
+    const hint = document.getElementById('dependentsHint');
+    const rawDep = parseInt(document.getElementById('dependents').value) || 0;
+    if (rawDep > 3) {
+      hint.textContent = `已輸入 ${rawDep} 口，超過 3 口部分由政府補貼，實際以 3 口計算`;
+      hint.style.color = '#f59e0b';
+    } else if (rawDep > 0) {
+      hint.textContent = `含眷屬 ${rawDep} 口，健保費 × ${1 + rawDep} 倍`;
+      hint.style.color = '#888';
+    } else {
+      hint.textContent = '';
+    }
     document.getElementById('rWelfare').textContent = `- ${fmt(welfare)}`;
     const selfContribRow = document.getElementById('rSelfContribRow');
     if (selfContribOn && selfContrib > 0) {
@@ -459,6 +483,7 @@
     }
   }
 
+  document.getElementById('dependents').addEventListener('input', calculate);
   document.getElementById('selfContribToggle').addEventListener('change', calculate);
   document.getElementById('selfContribRate').addEventListener('input', calculate);
   document.getElementById('calcBtn').addEventListener('click', calculate);
